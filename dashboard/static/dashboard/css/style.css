@@ -1,0 +1,35 @@
+/* Basic polished styles inspired by modern ERP dashboards (original design) */
+:root{
+  --sidebar-bg: #0f1724;
+  --sidebar-text: #e6eef8;
+  --accent: #0d6efd;
+  --muted: #6c757d;
+}
+*{box-sizing:border-box}
+body{font-family:Inter, Roboto, "Helvetica Neue", Arial, sans-serif;background:#f5f7fb}
+#wrapper{min-height:100vh}
+#sidebar{
+  width:240px;
+  background:var(--sidebar-bg);
+  color:var(--sidebar-text);
+}
+.sidebar-heading{border-bottom:1px solid rgba(255,255,255,0.03)}
+.logo{width:72px;height:auto;display:block;margin:0 auto 6px}
+.brand-text{font-weight:700;font-size:0.95rem;color:#c6d6ef}
+.sidebar-item{color:rgb(0, 0, 0);border:none;padding:12px 20px}
+.sidebar-item:hover{background:rgba(255,255,255,0.03);color:#fff}
+.list-group-item .fa{width:20px}
+#page-content-wrapper{flex:1;background:transparent}
+.navbar{background:#fff}
+.avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--accent)}
+.stat-card{border:0;box-shadow:0 6px 16px rgba(17,24,39,0.06);border-radius:12px}
+.stat-title{font-size:0.85rem;color:var(--muted)}
+.stat-value{font-size:1.15rem;font-weight:700;margin-top:6px}
+.stat-icon{color:rgba(13,110,253,0.12);font-size:28px}
+.card-header{font-weight:700;background:#fff}
+.btn:focus{box-shadow:none}
+.table thead th{border-bottom:0}
+.sidebar-item i{width:18px;text-align:center}
+@media (max-width: 991px){
+  #sidebar{display:none}
+}

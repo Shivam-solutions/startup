@@ -1,0 +1,97 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h4 class="m-0">Dashboard</h4>
+  <div>
+    <button class="btn btn-sm btn-primary me-2"><i class="fa fa-plus-circle me-1"></i> New Sale</button>
+    <button class="btn btn-sm btn-outline-secondary"><i class="fa fa-file-invoice me-1"></i> Billing</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  {% for s in stats %}
+  <div class="col-md-3">
+    <div class="card stat-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="stat-title">{{ s.title }}</div>
+            <div class="stat-value">{{ s.value }}</div>
+          </div>
+          <div class="stat-icon"><i class="fa fa-chart-simple fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header">
+        Recent Invoices
+        <div class="float-end"><a href="#" class="link-primary">View all</a></div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Invoice</th>
+                <th>Party</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in recent %}
+              <tr>
+                <td>{{ r.invoice }}</td>
+                <td>{{ r.party }}</td>
+                <td>{{ r.amount }}</td>
+                <td><span class="badge {% if r.status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ r.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Reports Snapshot</div>
+      <div class="card-body">
+        <p class="mb-0">Example charts and figures would go here. This scaffold keeps layout ready for charts (chart.js or other).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">Quick Actions</div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          {% for a in actions %}
+            <button class="btn btn-outline-primary btn-sm text-start"><i class="fa fa-circle-plus me-2"></i> {{ a }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Shortcuts</div>
+      <div class="card-body">
+        <div class="list-group list-group-flush">
+          <a href="#" class="list-group-item list-group-item-action">Customer Ledger</a>
+          <a href="#" class="list-group-item list-group-item-action">Stock Summary</a>
+          <a href="#" class="list-group-item list-group-item-action">GST Reports</a>
+          <a href="#" class="list-group-item list-group-item-action">Backup / Restore</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
