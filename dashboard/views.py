@@ -51,3 +51,56 @@ def sales_entry(request):
         'menu': menu,
         'rows': rows
     })
+
+
+
+def inventory(request):
+    """
+    Inventory view - headers now support grouped columns (subcolumns).
+    The template expects 'headers' to be a list of dicts where a dict
+    may contain a 'sub' key (list of subcolumn labels).
+    """
+    menu = [
+        {'name': 'Sales', 'icon': 'fa-shopping-cart'},
+        {'name': 'Purchase', 'icon': 'fa-people-carry'},
+        {'name': 'Inventory', 'icon': 'fa-archive'},
+        {'name': 'Accounts', 'icon': 'fa-calculator'},
+        {'name': 'Reports', 'icon': 'fa-chart-line'},
+        {'name': 'Masters', 'icon': 'fa-database'},
+        {'name': 'Billing', 'icon': 'fa-file-invoice-dollar'},
+        {'name': 'POS', 'icon': 'fa-cash-register'},
+        {'name': 'Settings', 'icon': 'fa-cog'},
+    ]
+
+    # Headers: top-level entries. If an entry has 'sub' it's a grouped column.
+    headers = [
+        {'label': 'Code'},
+        {'label': 'Product Name'},
+        {'label': 'Unit'},
+        {'label': 'Current Stock'},
+        {'label': 'Sales Scheme', 'sub': ['Deal', 'Free']},
+        {'label': 'Purc.Scheme',  'sub': ['Deal', 'Free']},
+        {'label': 'Cost Price'},
+        {'label': 'Value'},
+        {'label': 'M.R.P.'},
+        {'label': 'Purchase Price'},
+        {'label': 'Sales Price'},
+        {'label': 'Company'},
+        {'label': 'Manufacturer'},
+        {'label': 'Rec.Date'},
+        {'label': 'Batch'},
+        {'label': 'EXP'},
+        {'label': 'Supplier'},
+        {'label': 'Inv.No'},
+        {'label': 'Inv.Date'},
+        {'label': 'Rack No.'},
+    ]
+
+    # Placeholder rows (visual). Replace with queryset when ready: e.g. stocks = Stock.objects.all()
+    rows = range(20)
+
+    return render(request, 'dashboard/inventory.html', {
+        'menu': menu,
+        'headers': headers,
+        'rows': rows
+    })
