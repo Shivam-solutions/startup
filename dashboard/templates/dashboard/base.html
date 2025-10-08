@@ -24,6 +24,10 @@
               <a href="{% url 'sales_entry' %}" class="list-group-item list-group-item-action sidebar-item">
                 <i class="fa {{ item.icon }} me-2"></i> {{ item.name }}
               </a>
+            {% elif item.name == 'Inventory' %}
+              <a href="{% url 'inventory' %}" class="list-group-item list-group-item-action sidebar-item">
+                <i class="fa {{ item.icon }} me-2"></i> {{ item.name }}
+              </a>
             {% else %}
               <a href="#" class="list-group-item list-group-item-action sidebar-item">
                 <i class="fa {{ item.icon }} me-2"></i> {{ item.name }}
