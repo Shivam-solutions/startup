@@ -1,8 +1,22 @@
 {% extends 'dashboard/base.html' %}
+{% load extra_filters %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3 class="mb-0">Inventory</h3>
+  <form method="post" enctype="multipart/form-data" class="mb-3">
+    {% csrf_token %}
+    <div class="input-group">
+      <input type="file" name="inventory_file" accept=".xls,.xlsx,.csv" class="form-control" required>
+      <button class="btn btn-primary" type="submit">Upload Excel</button>
+    </div>
+  </form>
 </div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
 
 <div class="table-responsive">
   <table class="table table-sm table-bordered table-hover">
@@ -31,20 +45,50 @@
     </thead>
 
     <tbody>
-      {# Placeholder rows: keep layout aligned with grouped columns #}
-      {% for _ in rows %}
-        <tr>
-          {% for h in headers %}
-            {% if h.sub %}
-              {% for s in h.sub %}
+      {# If stocks queryset provided by view, render rows explicitly to avoid template filter issues #}
+      {% if stocks %}
+        {% for s in stocks %}
+          <tr>
+            <td>{{ s.code }}</td>
+            <td>{{ s.product_name }}</td>
+            <td>{{ s.unit }}</td>
+            <td>{{ s.current_stock }}</td>
+            <td>{{ s.sales_deal }}</td>
+            <td>{{ s.sales_free }}</td>
+            <td>{{ s.purc_deal }}</td>
+            <td>{{ s.purc_free }}</td>
+            <td>{{ s.cost_price }}</td>
+            <td>{{ s.value }}</td>
+            <td>{{ s.mrp }}</td>
+            <td>{{ s.purchase_price }}</td>
+            <td>{{ s.sales_price }}</td>
+            <td>{{ s.company }}</td>
+            <td>{{ s.manufacturer }}</td>
+            <td>{{ s.rec_date }}</td>
+            <td>{{ s.batch }}</td>
+            <td>{{ s.exp }}</td>
+            <td>{{ s.supplier }}</td>
+            <td>{{ s.inv_no }}</td>
+            <td>{{ s.inv_date }}</td>
+            <td>{{ s.rack_no }}</td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        {# Placeholder rows: keep layout aligned with grouped columns #}
+        {% for _ in rows %}
+          <tr>
+            {% for h in headers %}
+              {% if h.sub %}
+                {% for s in h.sub %}
+                  <td>&nbsp;</td>
+                {% endfor %}
+              {% else %}
                 <td>&nbsp;</td>
-              {% endfor %}
-            {% else %}
-              <td>&nbsp;</td>
-            {% endif %}
-          {% endfor %}
-        </tr>
-      {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% endif %}
     </tbody>
   </table>
 </div>
