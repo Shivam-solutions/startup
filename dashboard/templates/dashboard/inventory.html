@@ -1,22 +1,14 @@
-{% extends 'dashboard/base.html' %}
-{% load extra_filters %}
+﻿{% extends 'dashboard/base.html' %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3 class="mb-0">Inventory</h3>
-  <div class="d-flex align-items-center">
-    <div class="me-2" style="min-width:260px;">
-      <input id="inventory-search-input" type="search" class="form-control form-control-sm" placeholder="Search by code or product name" aria-label="Search inventory">
+  <form method="post" enctype="multipart/form-data" class="mb-3">
+    {% csrf_token %}
+    <div class="input-group">
+      <input type="file" name="inventory_file" accept=".xls,.xlsx,.csv" class="form-control" required>
+      <button class="btn btn-primary" type="submit">Upload Excel</button>
     </div>
-    <form method="post" enctype="multipart/form-data" class="mb-0">
-      {% csrf_token %}
-      <div class="input-group input-group-sm">
-        <input type="file" name="inventory_file" accept=".xls,.xlsx,.csv" class="form-control" required>
-        <button class="btn btn-primary" type="submit">Upload Excel</button>
-      </div>
-    </form>
-  </div>
-</div>
-</form>
+  </form>
 </div>
 
 {% if messages %}
@@ -25,10 +17,20 @@
   {% endfor %}
 {% endif %}
 
+<!-- 🔍 Filter Bar -->
+ <form method="get" action="{% url 'inventory' %}" class="mb-3 d-flex justify-content-center">
+  <input type="text" name="q" placeholder="Search by Code or Product Name"
+         class="form-control" style="max-width: 400px;"
+         value="{{ query|default:'' }}">
+  
+  <button type="submit" class="btn btn-primary ms-2">Search</button>
+  <a href="{% url 'inventory' %}" class="btn btn-secondary ms-2">Reset</a>
+</form>
+
+<!-- 🧾 Inventory Table -->
 <div class="table-responsive">
   <table class="table table-sm table-bordered table-hover">
     <thead class="table-light">
-      {# First header row: top-level labels. If header has 'sub' render colspan #}
       <tr>
         {% for h in headers %}
           {% if h.sub %}
@@ -38,8 +40,6 @@
           {% endif %}
         {% endfor %}
       </tr>
-
-      {# Second header row: subcolumn labels only for grouped headers #}
       <tr>
         {% for h in headers %}
           {% if h.sub %}
@@ -52,7 +52,6 @@
     </thead>
 
     <tbody>
-      {# If stocks queryset provided by view, render rows explicitly to avoid template filter issues #}
       {% if stocks %}
         {% for s in stocks %}
           <tr>
@@ -81,7 +80,6 @@
           </tr>
         {% endfor %}
       {% else %}
-        {# Placeholder rows: keep layout aligned with grouped columns #}
         {% for _ in rows %}
           <tr>
             {% for h in headers %}
@@ -100,170 +98,102 @@
   </table>
 </div>
 
-
+<!-- 🔧 Filtering + Sorting Logic -->
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   const table = document.querySelector('.table-responsive table');
-  if(!table) return;
-  const tbody = table.querySelector('tbody');
-  if(!tbody) return;
-  const thead = table.querySelector('thead');
-  if(!thead) return;
+  const tbody = table?.querySelector('tbody');
+  const thead = table?.querySelector('thead');
+  if(!table || !tbody || !thead) return;
 
-  // Get first and last header rows (handles templates with 1 or 2 header rows)
   const firstRow = thead.querySelector('tr:first-child');
   const lastRow = thead.querySelector('tr:last-child');
-
-  // Build mapping: for each data-column index, store normalized label and the header TH element
-  const labels = [];            // normalized label text per data column
-  const headerForCol = [];      // corresponding TH DOM element for that data column
-
-  const firstCells = firstRow ? Array.from(firstRow.children) : [];
-  const lastCells = lastRow ? Array.from(lastRow.children) : [];
-
-  // If there are two rows and some firstRow THs have colspan>1, those columns will be represented in lastRow.
-  // We'll iterate firstRow and expand colspan into lastRow children when present.
+  const firstCells = Array.from(firstRow?.children || []);
+  const lastCells = Array.from(lastRow?.children || []);
+  const labels = [], headerForCol = [];
   let lastIndex = 0;
+
   for(let i=0;i<firstCells.length;i++){
     const cell = firstCells[i];
-    const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
-    const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
-    const cellText = (cell.textContent || '').trim();
-    if(colspan > 1){
-      // take next 'colspan' THs from lastRow
+    const colspan = parseInt(cell.getAttribute('colspan')||'1',10);
+    const rowspan = parseInt(cell.getAttribute('rowspan')||'1',10);
+    const cellText = (cell.textContent||'').trim();
+    if(colspan>1){
       for(let k=0;k<colspan;k++){
         const subTh = lastCells[lastIndex];
         const lbl = subTh ? (subTh.textContent||'').trim().toLowerCase() : '';
-        labels.push(lbl);
-        headerForCol.push(subTh || cell);
-        lastIndex++;
+        labels.push(lbl); headerForCol.push(subTh||cell); lastIndex++;
       }
     } else {
-      // single column; header is the top cell (may have rowspan=2)
-      labels.push(cellText.toLowerCase());
-      headerForCol.push(cell);
+      labels.push(cellText.toLowerCase()); headerForCol.push(cell);
     }
   }
 
-  // If for any reason labels is empty (odd header layout), fallback to using all header THs in a single row
-  if(labels.length === 0){
-    const allTh = thead.querySelectorAll('th');
-    allTh.forEach(th => {
-      labels.push((th.textContent||'').trim().toLowerCase());
-      headerForCol.push(th);
-    });
-  }
-
-  // Utility parsers
   function normalize(s){ return (s||'').trim().toLowerCase(); }
-  function parseNumber(s){
-    if(!s) return 0;
-    s = String(s).replace(/[,₹\s]/g,'').trim();
-    const n = parseFloat(s);
-    return isFinite(n) ? n : 0;
-  }
+  function parseNumber(s){ if(!s) return 0; s=String(s).replace(/[,₹\s]/g,''); return parseFloat(s)||0; }
   function parseDate(s){
     if(!s) return 0;
-    const str = String(s).trim();
-    const d1 = Date.parse(str);
-    if(!isNaN(d1)) return d1;
-    const m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-    if(m){
-      const day = parseInt(m[1],10), mon = parseInt(m[2],10)-1, yr = parseInt(m[3],10);
-      return new Date(yr, mon, day).getTime();
-    }
-    const df = new Date(str);
-    return isNaN(df.getTime()) ? 0 : df.getTime();
+    const d = Date.parse(s);
+    if(!isNaN(d)) return d;
+    const m = String(s).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if(m){ return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])).getTime(); }
+    return 0;
   }
 
-  // Identify important columns by label
-  let codeIdx = -1, productIdx = -1;
-  const sortableCols = {}; // index -> {type:'number'|'date'|'string', th: element}
-
+  // Identify sortable columns
+  const sortableCols = {};
   labels.forEach((lbl, idx) => {
     const t = normalize(lbl);
-    // detect code / product name
-    if(['code','product code','product_id','product code '].includes(t) && codeIdx===-1) codeIdx = idx;
-    if(['product','product name','product_name','product name '].includes(t) && productIdx===-1) productIdx = idx;
-    // detect exp / expiry
-    if(['exp','expiry','exp.','exp date','exp_date'].includes(t)){
-      sortableCols[idx] = {type:'date', th: headerForCol[idx]};
-    }
-    // detect current stock / stock / qty
-    if(['current stock','current_stock','stock','qty','quantity','current_stock '].includes(t)){
-      sortableCols[idx] = {type:'number', th: headerForCol[idx]};
-    }
+    if(['exp','expiry','exp date','exp.','exp_date'].includes(t)) sortableCols[idx] = {type:'date', th: headerForCol[idx]};
+    if(['current stock','stock','qty','quantity','current_stock'].includes(t)) sortableCols[idx] = {type:'number', th: headerForCol[idx]};
   });
 
-  // fallback positions
-  if(codeIdx === -1) codeIdx = 0;
-  if(productIdx === -1) productIdx = 1;
-
-  // Function to sort rows by data column index and type
   function sortTableByColumn(index, type, asc){
-    const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.style.display !== 'none');
-    rows.sort((a,b) => {
-      const aCell = a.children[index] ? a.children[index].textContent.trim() : '';
-      const bCell = b.children[index] ? b.children[index].textContent.trim() : '';
-      if(type === 'number'){
-        return asc ? parseNumber(aCell) - parseNumber(bCell) : parseNumber(bCell) - parseNumber(aCell);
-      } else if(type === 'date'){
-        return asc ? parseDate(aCell) - parseDate(bCell) : parseDate(bCell) - parseDate(aCell);
-      } else {
-        return asc ? aCell.localeCompare(bCell) : bCell.localeCompare(aCell);
-      }
+    const rows = Array.from(tbody.querySelectorAll('tr')).filter(r=>r.style.display!=='none');
+    rows.sort((a,b)=>{
+      const aCell = a.children[index]?.textContent.trim()||'';
+      const bCell = b.children[index]?.textContent.trim()||'';
+      if(type==='number') return asc ? parseNumber(aCell)-parseNumber(bCell) : parseNumber(bCell)-parseNumber(aCell);
+      if(type==='date') return asc ? parseDate(aCell)-parseDate(bCell) : parseDate(bCell)-parseDate(aCell);
+      return asc ? aCell.localeCompare(bCell) : bCell.localeCompare(aCell);
     });
-    for(const r of rows) tbody.appendChild(r);
+    rows.forEach(r=>tbody.appendChild(r));
   }
 
-  // Attach click handlers and visual indicators for sortable columns
-  Object.keys(sortableCols).forEach(key => {
-    const idx = parseInt(key,10);
-    const meta = sortableCols[idx];
-    const th = meta.th;
-    if(!th) return;
-    th.classList.add('inventory-sortable');
-    th.style.cursor = 'pointer';
-    th.title = meta.type === 'date' ? 'Click to sort by expiry date' : 'Click to sort by stock';
-    // add indicator element
-    const indicator = document.createElement('span');
-    indicator.style.marginLeft = '6px';
-    indicator.style.fontSize = '0.9em';
-    indicator.innerHTML = '&#x2195;'; // up-down arrow
+  Object.keys(sortableCols).forEach(k=>{
+    const idx = parseInt(k,10);
+    const {th,type} = sortableCols[idx];
+    th.style.cursor='pointer';
+    th.title='Click to sort';
+    const indicator=document.createElement('span');
+    indicator.style.marginLeft='6px'; indicator.innerHTML='↕️';
     th.appendChild(indicator);
-
-    let asc = true;
-    th.addEventListener('click', function(e){
-      sortTableByColumn(idx, meta.type, asc);
-      indicator.innerHTML = asc ? '&#x2191;' : '&#x2193;';
-      asc = !asc;
+    let asc=true;
+    th.addEventListener('click',()=>{
+      sortTableByColumn(idx,type,asc);
+      indicator.innerHTML=asc?'↑':'↓';
+      asc=!asc;
     });
   });
 
-  // Search/filter functionality (uses codeIdx and productIdx)
-  const searchInput = document.getElementById('inventory-search-input');
+  // Real-time search filter
+  const searchInput=document.getElementById('inventory-search-input');
   if(searchInput){
-    searchInput.addEventListener('input', function(e){
-      const q = e.target.value.trim().toLowerCase();
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-      rows.forEach(r => {
-        const code = (r.children[codeIdx] ? r.children[codeIdx].textContent : '').toLowerCase();
-        const product = (r.children[productIdx] ? r.children[productIdx].textContent : '').toLowerCase();
-        const hay = (code + ' ' + product).trim();
-        if(!q || hay.indexOf(q) !== -1){
-          r.style.display = '';
-        } else {
-          r.style.display = 'none';
-        }
+    let codeIdx=labels.indexOf('code')>-1?labels.indexOf('code'):0;
+    let productIdx=labels.indexOf('product name')>-1?labels.indexOf('product name'):1;
+    searchInput.addEventListener('input',function(e){
+      const q=e.target.value.toLowerCase();
+      Array.from(tbody.querySelectorAll('tr')).forEach(r=>{
+        const code=(r.children[codeIdx]?.textContent||'').toLowerCase();
+        const prod=(r.children[productIdx]?.textContent||'').toLowerCase();
+        r.style.display=(code.includes(q)||prod.includes(q))?'':'none';
       });
     });
   }
 });
 </script>
 
-
-<p class="text-muted small">
-  Columns shown in the exact order provided. To plug real data, pass a queryset named
-  <code>stocks</code> (or whatever your model is) and replace the placeholder rows.
+<p class="text-muted small mt-3">
+  Columns shown in the exact order provided. Use the filter bar above to search and sort instantly.
 </p>
 {% endblock %}

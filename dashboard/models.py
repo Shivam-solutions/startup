@@ -1,5 +1,7 @@
 from django.db import models
 
+    # your existing fields...
+
 # Starter models (extend as needed)
 class Customer(models.Model):
     name = models.CharField(max_length=200)
@@ -15,7 +17,7 @@ class Stock(models.Model):
     product_name = models.CharField(max_length=255, blank=True, null=True)
     unit = models.CharField(max_length=50, blank=True, null=True)
     current_stock = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-
+   
     # Sales Scheme
     sales_deal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     sales_free = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -41,7 +43,6 @@ class Stock(models.Model):
     inv_date = models.DateField(null=True, blank=True)
     rack_no = models.CharField(max_length=100, blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
