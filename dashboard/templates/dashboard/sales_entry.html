@@ -1,0 +1,85 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+/* Page-local styles for Sales Entry */
+.sale-entry .sale-header h4{letter-spacing:1px;color:#1f2937}
+.sale-entry .date-box{background:#0d6efd;border-radius:6px;padding:10px 14px;color:white;text-align:center}
+.sale-table { background: linear-gradient(#eef6ff,#f6fbff); border:1px solid #cfe0ff; border-radius:6px; padding:0; }
+.sale-table table thead th{font-weight:700; font-size:0.95rem; color:#16325c; border-bottom:1px solid rgba(0,0,0,0); text-align:left}
+.sale-table table tbody td{ border-bottom:1px solid #e6eef8; height:34px; vertical-align:middle; padding:0.5rem; }
+.sale-bottom { margin-top:16px; display:flex; gap:12px; }
+.sale-left, .sale-right { background:linear-gradient(#f1f6fb,#eef6fb); border:1px solid #d7e7ff; border-radius:6px; padding:18px; }
+.sale-left{ flex:1; min-height:180px; }
+.sale-right{ width:320px; }
+.sale-left .field { margin-bottom:10px; color:#2563eb; }
+.sale-right .label { color:#2563eb; font-weight:700; }
+.sale-right .value { float:right; font-weight:700; }
+.small-muted { color:#6b7280; font-size:0.9rem }
+</style>
+
+<div class="sale-entry">
+  <div class="sale-header d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0">SALE ENTRY</h4>
+    <div class="date-box">
+      <div style="font-size:0.85rem;">Date</div>
+      <div style="font-weight:700;font-size:1rem;">31/03/2020</div>
+    </div>
+  </div>
+
+  <div class="sale-table p-2">
+    <table class="table table-borderless mb-0">
+      <thead>
+        <tr>
+          <th style="width:48%">PRODUCT</th>
+          <th style="width:8%">MRP</th>
+          <th style="width:8%">QTY</th>
+          <th style="width:8%">FREE</th>
+          <th style="width:14%">RATE</th>
+          <th style="width:14%">AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in rows %}
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sale-bottom">
+    <div class="sale-left">
+      <div class="d-flex justify-content-between mb-2">
+        <div><span class="small-muted">Item :</span></div>
+        <div><span class="small-muted">Stock:</span></div>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <div><span class="small-muted">MRP :</span></div>
+        <div><span class="small-muted"> </span></div>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <div><span class="small-muted">M.R.P. :</span></div>
+        <div><span class="small-muted"> </span></div>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <div><span class="small-muted">Chall.:</span></div>
+        <div><span class="small-muted">Date :</span></div>
+      </div>
+    </div>
+
+    <div class="sale-right">
+      <div class="d-flex justify-content-between mb-2"><div class="label">VALUE OF GOODS :</div><div class="value"> </div></div>
+      <div class="d-flex justify-content-between mb-2"><div class="label">DISCOUNT :</div><div class="value"> </div></div>
+      <div class="d-flex justify-content-between mb-2"><div class="label">GST :</div><div class="value"> </div></div>
+      <div style="height:60px"></div>
+      <div class="d-flex justify-content-between mb-2"><div class="label"> </div><div class="value"> </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

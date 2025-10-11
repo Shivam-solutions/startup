@@ -17,6 +17,7 @@
           <img src="{% static 'dashboard/images/logo.svg' %}" alt="logo" class="logo">
           <div class="brand-text">ERP • Inspired</div>
         </div>
+
         <div class="list-group list-group-flush">
           {% for item in menu %}
             <a href="{% url 'inventory' %}" class="list-group-item list-group-item-action sidebar-item">
@@ -29,22 +30,20 @@
 
       <!-- Page content -->
       <div id="page-content-wrapper" class="w-100">
+
         <nav class="navbar navbar-expand-lg navbar-light border-bottom">
           <div class="container-fluid">
-            <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+            <button class="btn" id="menu-toggle"><i class="fa fa-bars"></i></button>
 
-            <form class="d-none d-md-flex ms-3" role="search">
-              <input class="form-control form-control-sm" type="search" placeholder="Search (invoices, items, parties)" aria-label="Search">
-            </form>
-
-            <div class="ms-auto d-flex align-items-center">
-              <div class="me-3 text-end d-none d-md-block">
-                <div style="font-size:0.9rem">Welcome, Admin</div>
-                <div style="font-size:0.75rem;color:#666">Last login: --</div>
-              </div>
-              <div class="avatar">
-                <i class="fa fa-user-circle fa-2x"></i>
-              </div>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav ms-auto mt-2 mt-lg-0">
+                <li class="nav-item">
+                  <a class="nav-link" href="#">Welcome</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#">Profile</a>
+                </li>
+              </ul>
             </div>
           </div>
         </nav>
