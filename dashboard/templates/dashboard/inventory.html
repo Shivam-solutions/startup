@@ -1,0 +1,199 @@
+﻿{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Inventory</h3>
+  <form method="post" enctype="multipart/form-data" class="mb-3">
+    {% csrf_token %}
+    <div class="input-group">
+      <input type="file" name="inventory_file" accept=".xls,.xlsx,.csv" class="form-control" required>
+      <button class="btn btn-primary" type="submit">Upload Excel</button>
+    </div>
+  </form>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- 🔍 Filter Bar -->
+ <form method="get" action="{% url 'inventory' %}" class="mb-3 d-flex justify-content-center">
+  <input type="text" name="q" placeholder="Search by Code or Product Name"
+         class="form-control" style="max-width: 400px;"
+         value="{{ query|default:'' }}">
+  
+  <button type="submit" class="btn btn-primary ms-2">Search</button>
+  <a href="{% url 'inventory' %}" class="btn btn-secondary ms-2">Reset</a>
+</form>
+
+<!-- 🧾 Inventory Table -->
+<div class="table-responsive">
+  <table class="table table-sm table-bordered table-hover">
+    <thead class="table-light">
+      <tr>
+        {% for h in headers %}
+          {% if h.sub %}
+            <th class="text-center align-middle" colspan="{{ h.sub|length }}">{{ h.label }}</th>
+          {% else %}
+            <th class="align-middle" rowspan="2">{{ h.label }}</th>
+          {% endif %}
+        {% endfor %}
+      </tr>
+      <tr>
+        {% for h in headers %}
+          {% if h.sub %}
+            {% for s in h.sub %}
+              <th class="text-center">{{ s }}</th>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% if stocks %}
+        {% for s in stocks %}
+          <tr>
+            <td>{{ s.code }}</td>
+            <td>{{ s.product_name }}</td>
+            <td>{{ s.unit }}</td>
+            <td>{{ s.current_stock }}</td>
+            <td>{{ s.sales_deal }}</td>
+            <td>{{ s.sales_free }}</td>
+            <td>{{ s.purc_deal }}</td>
+            <td>{{ s.purc_free }}</td>
+            <td>{{ s.cost_price }}</td>
+            <td>{{ s.value }}</td>
+            <td>{{ s.mrp }}</td>
+            <td>{{ s.purchase_price }}</td>
+            <td>{{ s.sales_price }}</td>
+            <td>{{ s.company }}</td>
+            <td>{{ s.manufacturer }}</td>
+            <td>{{ s.rec_date }}</td>
+            <td>{{ s.batch }}</td>
+            <td>{{ s.exp }}</td>
+            <td>{{ s.supplier }}</td>
+            <td>{{ s.inv_no }}</td>
+            <td>{{ s.inv_date }}</td>
+            <td>{{ s.rack_no }}</td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        {% for _ in rows %}
+          <tr>
+            {% for h in headers %}
+              {% if h.sub %}
+                {% for s in h.sub %}
+                  <td>&nbsp;</td>
+                {% endfor %}
+              {% else %}
+                <td>&nbsp;</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- 🔧 Filtering + Sorting Logic -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const table = document.querySelector('.table-responsive table');
+  const tbody = table?.querySelector('tbody');
+  const thead = table?.querySelector('thead');
+  if(!table || !tbody || !thead) return;
+
+  const firstRow = thead.querySelector('tr:first-child');
+  const lastRow = thead.querySelector('tr:last-child');
+  const firstCells = Array.from(firstRow?.children || []);
+  const lastCells = Array.from(lastRow?.children || []);
+  const labels = [], headerForCol = [];
+  let lastIndex = 0;
+
+  for(let i=0;i<firstCells.length;i++){
+    const cell = firstCells[i];
+    const colspan = parseInt(cell.getAttribute('colspan')||'1',10);
+    const rowspan = parseInt(cell.getAttribute('rowspan')||'1',10);
+    const cellText = (cell.textContent||'').trim();
+    if(colspan>1){
+      for(let k=0;k<colspan;k++){
+        const subTh = lastCells[lastIndex];
+        const lbl = subTh ? (subTh.textContent||'').trim().toLowerCase() : '';
+        labels.push(lbl); headerForCol.push(subTh||cell); lastIndex++;
+      }
+    } else {
+      labels.push(cellText.toLowerCase()); headerForCol.push(cell);
+    }
+  }
+
+  function normalize(s){ return (s||'').trim().toLowerCase(); }
+  function parseNumber(s){ if(!s) return 0; s=String(s).replace(/[,₹\s]/g,''); return parseFloat(s)||0; }
+  function parseDate(s){
+    if(!s) return 0;
+    const d = Date.parse(s);
+    if(!isNaN(d)) return d;
+    const m = String(s).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if(m){ return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])).getTime(); }
+    return 0;
+  }
+
+  // Identify sortable columns
+  const sortableCols = {};
+  labels.forEach((lbl, idx) => {
+    const t = normalize(lbl);
+    if(['exp','expiry','exp date','exp.','exp_date'].includes(t)) sortableCols[idx] = {type:'date', th: headerForCol[idx]};
+    if(['current stock','stock','qty','quantity','current_stock'].includes(t)) sortableCols[idx] = {type:'number', th: headerForCol[idx]};
+  });
+
+  function sortTableByColumn(index, type, asc){
+    const rows = Array.from(tbody.querySelectorAll('tr')).filter(r=>r.style.display!=='none');
+    rows.sort((a,b)=>{
+      const aCell = a.children[index]?.textContent.trim()||'';
+      const bCell = b.children[index]?.textContent.trim()||'';
+      if(type==='number') return asc ? parseNumber(aCell)-parseNumber(bCell) : parseNumber(bCell)-parseNumber(aCell);
+      if(type==='date') return asc ? parseDate(aCell)-parseDate(bCell) : parseDate(bCell)-parseDate(aCell);
+      return asc ? aCell.localeCompare(bCell) : bCell.localeCompare(aCell);
+    });
+    rows.forEach(r=>tbody.appendChild(r));
+  }
+
+  Object.keys(sortableCols).forEach(k=>{
+    const idx = parseInt(k,10);
+    const {th,type} = sortableCols[idx];
+    th.style.cursor='pointer';
+    th.title='Click to sort';
+    const indicator=document.createElement('span');
+    indicator.style.marginLeft='6px'; indicator.innerHTML='↕️';
+    th.appendChild(indicator);
+    let asc=true;
+    th.addEventListener('click',()=>{
+      sortTableByColumn(idx,type,asc);
+      indicator.innerHTML=asc?'↑':'↓';
+      asc=!asc;
+    });
+  });
+
+  // Real-time search filter
+  const searchInput=document.getElementById('inventory-search-input');
+  if(searchInput){
+    let codeIdx=labels.indexOf('code')>-1?labels.indexOf('code'):0;
+    let productIdx=labels.indexOf('product name')>-1?labels.indexOf('product name'):1;
+    searchInput.addEventListener('input',function(e){
+      const q=e.target.value.toLowerCase();
+      Array.from(tbody.querySelectorAll('tr')).forEach(r=>{
+        const code=(r.children[codeIdx]?.textContent||'').toLowerCase();
+        const prod=(r.children[productIdx]?.textContent||'').toLowerCase();
+        r.style.display=(code.includes(q)||prod.includes(q))?'':'none';
+      });
+    });
+  }
+});
+</script>
+
+<p class="text-muted small mt-3">
+  Columns shown in the exact order provided. Use the filter bar above to search and sort instantly.
+</p>
+{% endblock %}
